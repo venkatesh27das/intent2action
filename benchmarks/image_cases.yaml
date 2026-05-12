@@ -1,0 +1,15 @@
+cases:
+  - id: invoice_duplicate_charge_image
+    image_text: "Invoice INV-1042 charged twice. Need update by EOD."
+    context:
+      domain: customer_support
+      user_role: support_agent
+    min_actions: 3
+    expected_intent_keywords:
+      - ["billing", "support", "customer"]
+      - ["communication", "client response", "customer response"]
+    expected_action_keywords:
+      - ["invoice", "INV-1042"]
+      - ["duplicate charge", "charged twice", "billing"]
+      - ["draft response", "customer", "email"]
+

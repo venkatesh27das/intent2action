@@ -1,0 +1,62 @@
+cases:
+  - id: dashboard_issue
+    input: "Client is asking why the sales dashboard is blank since yesterday."
+    context:
+      domain: data_analytics
+      user_role: business_analyst
+    min_actions: 3
+    expected_intent_keywords:
+      - ["issue_investigation", "troubleshoot", "investigation"]
+      - ["client_response", "status update", "communication"]
+    expected_action_keywords:
+      - ["investigate", "dashboard", "refresh", "data source"]
+      - ["pipeline", "upstream", "data source"]
+      - ["ticket", "incident", "task"]
+      - ["client response", "acknowledgment", "communication"]
+      - ["dashboard link", "dashboard url", "dashboard id"]
+
+  - id: meeting_notes
+    input: "Meeting notes: Priya will confirm data access, Marco will draft the migration checklist, and the team needs a follow-up meeting next Tuesday."
+    context:
+      domain: project_management
+      user_role: project_manager
+    min_actions: 3
+    expected_intent_keywords:
+      - ["meeting_followup", "follow-up", "followup"]
+      - ["task_creation", "task"]
+    expected_action_keywords:
+      - ["confirm data access", "data access"]
+      - ["migration checklist", "checklist"]
+      - ["follow-up meeting", "schedule"]
+      - ["assign owner", "owner", "priya", "marco"]
+
+  - id: requirement_breakdown
+    input: "Requirement: Add export-to-CSV support for filtered customer reports, including audit logging and admin-only access."
+    context:
+      domain: software_development
+      user_role: product_manager
+    min_actions: 3
+    expected_intent_keywords:
+      - ["requirement_breakdown", "requirement"]
+      - ["developer", "technical task", "user story"]
+    expected_action_keywords:
+      - ["user story", "technical task", "implementation"]
+      - ["test cases", "acceptance criteria"]
+      - ["audit logging", "audit"]
+      - ["admin-only", "access control", "permissions"]
+
+  - id: customer_email
+    input: "Customer email: We were charged twice for invoice INV-1042 and need an update before end of day."
+    context:
+      domain: customer_support
+      user_role: support_agent
+    min_actions: 3
+    expected_intent_keywords:
+      - ["support_escalation", "billing", "escalation"]
+      - ["client_response", "customer response", "communication"]
+    expected_action_keywords:
+      - ["invoice", "INV-1042"]
+      - ["duplicate charge", "charged twice", "billing"]
+      - ["escalate", "finance", "support"]
+      - ["draft response", "customer response", "email"]
+

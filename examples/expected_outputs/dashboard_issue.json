@@ -1,0 +1,50 @@
+{
+  "input_summary": "A client reports that the sales dashboard has been blank since yesterday.",
+  "input_type": "text",
+  "extracted_entities": [
+    {
+      "name": "sales dashboard",
+      "value": "sales dashboard",
+      "entity_type": "system",
+      "confidence": 0.9
+    },
+    {
+      "name": "timeframe",
+      "value": "since yesterday",
+      "entity_type": "date_range",
+      "confidence": 0.85
+    }
+  ],
+  "detected_intents": [
+    {
+      "intent": "issue_investigation",
+      "confidence": 0.9,
+      "rationale": "The user needs to understand why a dashboard is blank."
+    },
+    {
+      "intent": "client_response",
+      "confidence": 0.7,
+      "rationale": "The client is asking for an explanation."
+    }
+  ],
+  "possible_actions": [
+    {
+      "action_name": "Investigate dashboard refresh",
+      "action_type": "investigate_issue",
+      "description": "Review dashboard refresh status and recent failures.",
+      "rationale": "A blank dashboard often indicates a refresh or query failure.",
+      "required_inputs": ["dashboard_link", "timeframe"],
+      "available_inputs": ["timeframe"],
+      "missing_inputs": ["dashboard_link"],
+      "suggested_tools": ["BI platform", "dashboard logs"],
+      "confidence": 0.88,
+      "risk_level": "low",
+      "execution_mode": "human_approval_required",
+      "ranking_score": 0.59
+    }
+  ],
+  "clarifying_questions": ["What is the dashboard link?"],
+  "raw_model_output": null,
+  "warnings": []
+}
+

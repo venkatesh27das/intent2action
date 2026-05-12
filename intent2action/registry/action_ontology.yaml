@@ -1,0 +1,51 @@
+information_actions:
+  - summarize_content
+  - extract_information
+  - classify_input
+  - translate_content
+  - compare_information
+  - validate_information
+
+task_actions:
+  - create_task
+  - create_ticket
+  - assign_owner
+  - set_deadline
+  - create_checklist
+  - generate_followups
+
+communication_actions:
+  - draft_email
+  - draft_message
+  - notify_team
+  - generate_response
+  - prepare_status_update
+
+workflow_actions:
+  - create_workflow
+  - trigger_approval
+  - route_to_team
+  - escalate_issue
+  - generate_sop_steps
+
+analysis_actions:
+  - investigate_issue
+  - analyze_data
+  - compare_metrics
+  - detect_anomaly
+  - generate_insights
+
+developer_actions:
+  - create_bug_report
+  - generate_user_story
+  - create_test_cases
+  - summarize_pull_request
+  - create_technical_task
+
+document_actions:
+  - extract_invoice_fields
+  - review_contract
+  - classify_document
+  - extract_action_items
+  - generate_document_summary
+

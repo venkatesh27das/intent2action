@@ -1,0 +1,19 @@
+intents:
+  - task_creation
+  - issue_investigation
+  - bug_reporting
+  - meeting_followup
+  - client_response
+  - document_processing
+  - approval_request
+  - data_analysis
+  - workflow_creation
+  - requirement_breakdown
+  - support_escalation
+  - compliance_review
+  - information_extraction
+  - communication_drafting
+  - scheduling
+  - reporting
+  - monitoring_alert
+

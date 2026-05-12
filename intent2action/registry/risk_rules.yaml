@@ -1,0 +1,23 @@
+low_risk:
+  - summarize
+  - extract
+  - classify
+  - generate checklist
+  - draft internal notes
+
+medium_risk:
+  - create ticket
+  - create task
+  - draft email
+  - notify internal team
+  - schedule meeting
+
+high_risk:
+  - send external email
+  - delete data
+  - approve payment
+  - change production configuration
+  - trigger deployment
+  - update official record
+  - access sensitive data
+

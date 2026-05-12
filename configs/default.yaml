@@ -1,0 +1,15 @@
+lmstudio:
+  base_url: "http://localhost:1234/v1"
+  model: "local-model"
+  timeout_seconds: 120
+
+inference:
+  max_actions: 8
+  min_confidence: 0.2
+  enable_json_repair: true
+  enable_risk_override: true
+
+ui:
+  title: "intent2action"
+  subtitle: "Convert text and images into structured action candidates"
+
