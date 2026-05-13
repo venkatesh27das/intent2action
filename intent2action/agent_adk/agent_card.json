@@ -1,0 +1,55 @@
+{
+  "protocolVersion": "0.3.0",
+  "name": "intent2action ADK Agent",
+  "description": "Infers structured, ranked action candidates from text or images. This agent never executes actions or calls operational tools.",
+  "url": "http://localhost:8010/a2a",
+  "preferredTransport": "JSONRPC",
+  "additionalInterfaces": [
+    {
+      "url": "http://localhost:8010/a2a",
+      "transport": "JSONRPC"
+    }
+  ],
+  "provider": {
+    "organization": "intent2action",
+    "url": "https://github.com/intent2action/intent2action"
+  },
+  "version": "1.0.0",
+  "documentationUrl": "https://github.com/intent2action/intent2action",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": true
+  },
+  "securitySchemes": {},
+  "security": [],
+  "defaultInputModes": ["text/plain", "image/png", "image/jpeg", "image/webp"],
+  "defaultOutputModes": ["application/json"],
+  "skills": [
+    {
+      "id": "infer-actions-from-text",
+      "name": "Infer Actions From Text",
+      "description": "Analyze unstructured text and return possible actions, missing inputs, risk levels, and recommended execution modes.",
+      "tags": ["action-inference", "intent-detection", "risk-scoring", "text"],
+      "examples": [
+        "Client is asking why the sales dashboard is blank since yesterday.",
+        "Break these meeting notes into follow-up actions."
+      ],
+      "inputModes": ["text/plain", "application/json"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "infer-actions-from-image",
+      "name": "Infer Actions From Image",
+      "description": "Analyze image input and return possible actions without executing them.",
+      "tags": ["action-inference", "vision", "image", "risk-scoring"],
+      "examples": [
+        "Analyze this sales chart image and infer review actions.",
+        "Analyze this UI image and infer possible remediation actions."
+      ],
+      "inputModes": ["image/png", "image/jpeg", "image/webp"],
+      "outputModes": ["application/json"]
+    }
+  ],
+  "supportsAuthenticatedExtendedCard": false
+}

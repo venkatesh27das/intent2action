@@ -232,6 +232,18 @@ Streamlit UI:
 streamlit run intent2action/ui/streamlit_app.py
 ```
 
+Google ADK A2A agent server:
+
+```bash
+pip install -e ".[agent]"
+intent2action-adk-agent --port 8010
+curl http://localhost:8010/.well-known/agent-card.json
+```
+
+The ADK agent code lives in `intent2action/agent_adk/agent.py` and exposes text and base64-image inference tools.
+
+Install `google-adk[a2a]` through the `agent` extra before running the server.
+
 Docker:
 
 ```bash
