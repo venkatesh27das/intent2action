@@ -53,6 +53,30 @@ Output shape:
 }
 ```
 
+## Image Example
+
+The repository includes an example sales chart image at:
+
+```text
+benchmarks/example slaes plot.png
+```
+
+Run image inference against it:
+
+```bash
+intent2action infer-image "benchmarks/example slaes plot.png" \
+  --context '{"domain":"sales_analytics","user_role":"finance_analyst"}'
+```
+
+For a chart like this, intent2action should infer review-oriented actions such as:
+
+- Investigate the sharp drop in cashed-in percentage.
+- Compare February and March invoiced versus cashed amounts.
+- Ask for business context around the latest period.
+- Prepare a finance review summary without updating any records.
+
+The exact wording depends on the configured model, but the response should still follow the same `ActionInferenceResponse` JSON schema.
+
 ## Quick Start
 
 Install:
