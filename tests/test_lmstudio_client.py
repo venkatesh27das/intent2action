@@ -72,5 +72,5 @@ def test_generate_text_raises_clear_error_on_http_failure() -> None:
         transport=httpx.MockTransport(handler),
     )
 
-    with pytest.raises(LMStudioError, match="OpenAI-compatible model provider"):
+    with pytest.raises(LMStudioError, match="HTTP 400"):
         client.generate_text([{"role": "user", "content": "hello"}])

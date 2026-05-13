@@ -4,10 +4,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from intent2action import __version__
 from intent2action.schemas.action import ActionCandidate
 from intent2action.schemas.entity import ExtractedEntity
 from intent2action.schemas.intent import DetectedIntent
-from intent2action import __version__
 
 
 class ActionInferenceResponse(BaseModel):

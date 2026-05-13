@@ -32,3 +32,17 @@ def test_response_rejects_extra_fields() -> None:
             extra_field=True,
         )
 
+
+def test_response_includes_version_metadata() -> None:
+    response = ActionInferenceResponse(
+        input_summary="summary",
+        input_type="text",
+        extracted_entities=[],
+        detected_intents=[],
+        possible_actions=[],
+        clarifying_questions=[],
+        warnings=[],
+    )
+
+    assert response.schema_version == "1.0"
+    assert response.package_version == "1.0.0"

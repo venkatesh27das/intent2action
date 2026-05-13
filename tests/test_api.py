@@ -3,6 +3,7 @@
 from fastapi.testclient import TestClient
 
 from intent2action.app import main
+from intent2action.providers.openai_compatible_client import ModelProviderAuthenticationError
 from intent2action.schemas import ActionInferenceResponse
 
 
@@ -43,6 +44,7 @@ def test_health_endpoint() -> None:
     body = response.json()
     assert body["status"] == "ok"
     assert body["service"] == "intent2action"
+    assert body["version"] == "1.0.0"
     assert body["model_provider"]["type"] == "openai_compatible"
     assert "api_key" not in body["model_provider"]
 
@@ -58,6 +60,7 @@ def test_infer_actions_endpoint_uses_pipeline(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert response.json()["input_type"] == "text"
+    assert response.json()["schema_version"] == "1.0"
 
 
 def test_infer_actions_image_endpoint_uses_pipeline(monkeypatch) -> None:
@@ -85,3 +88,28 @@ def test_infer_actions_image_rejects_invalid_context(monkeypatch) -> None:
     )
 
     assert response.status_code == 400
+
+
+def test_provider_error_is_structured(monkeypatch) -> None:
+    class FailingPipeline:
+        def infer_from_text(
+            self,
+            content: str,
+            context: dict | None = None,
+        ) -> ActionInferenceResponse:
+            raise ModelProviderAuthenticationError(
+                "The model provider rejected the configured API key or credentials.",
+                code="model_provider_authentication_failed",
+                status_code=401,
+            )
+
+    monkeypatch.setattr(main, "get_pipeline", lambda: FailingPipeline())
+    client = TestClient(main.app)
+
+    response = client.post(
+        "/infer-actions",
+        json={"input_type": "text", "content": "hello"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"]["error"] == "model_provider_authentication_failed"

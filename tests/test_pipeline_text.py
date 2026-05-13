@@ -66,3 +66,19 @@ def test_text_pipeline_with_mocked_model() -> None:
     assert response.possible_actions[0].missing_inputs == ["dashboard_url"]
     assert response.possible_actions[0].ranking_score > 0
 
+
+class FakeExecutionClaimClient(FakeLMStudioClient):
+    """Fake client that claims execution occurred."""
+
+    def generate_text(self, messages: list[dict]) -> str:
+        data = json.loads(super().generate_text(messages))
+        data["possible_actions"][0]["description"] = "Email sent to the customer."
+        return json.dumps(data)
+
+
+def test_pipeline_warns_on_execution_claims() -> None:
+    pipeline = ActionInferencePipeline(llm_client=FakeExecutionClaimClient())
+
+    response = pipeline.infer_from_text("Email the customer about the issue.")
+
+    assert "actions are inference only" in response.warnings[-1]
