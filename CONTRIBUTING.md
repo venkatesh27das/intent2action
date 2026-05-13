@@ -21,8 +21,8 @@ pytest
 
 ## Project Principles
 
-- Keep the default path local-first.
-- Do not add paid cloud LLM APIs to the core MVP path.
+- Keep provider configuration generic and endpoint-neutral.
+- Do not hardcode a single hosted LLM API as the only supported path.
 - The system must infer possible actions only. It must not execute actions.
 - Add tests for schema, ranking, risk, missing-input, provider, and API behavior when changing those areas.
 - Keep modules small and typed.
@@ -32,8 +32,7 @@ pytest
 Use the benchmark harness for live model regressions:
 
 ```bash
-python scripts/benchmark.py --model your-lm-studio-model --runs 1
+python scripts/benchmark.py --model your-model --runs 1
 ```
 
 Benchmark scores are heuristic regression signals. Do not present them as ground-truth accuracy without a larger labeled evaluation set.
-

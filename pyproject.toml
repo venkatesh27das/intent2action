@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "intent2action"
 version = "1.0.0"
-description = "Local-first multimodal action inference framework."
+description = "Multimodal action inference framework for OpenAI-compatible model endpoints."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }

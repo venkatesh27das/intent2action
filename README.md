@@ -2,7 +2,7 @@
 
 intent2action converts text and images into structured, ranked action candidates.
 
-It is local-first by default, works with any OpenAI-compatible `/v1/chat/completions` endpoint, and returns validated JSON that downstream systems or humans can review.
+It works with any OpenAI-compatible `/v1/chat/completions` endpoint and returns validated JSON that downstream systems or humans can review.
 
 intent2action never executes actions. It does not send emails, create tickets, update records, trigger deployments, approve payments, or call tools.
 
@@ -17,7 +17,7 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-Start a local OpenAI-compatible model server, for example LM Studio on `http://localhost:1234/v1`, then set your model in `.env`:
+Start an OpenAI-compatible model server, for example LM Studio on `http://localhost:1234/v1`, then set your model in `.env`:
 
 ```bash
 INTENT2ACTION_BASE_URL=http://localhost:1234/v1
@@ -80,7 +80,7 @@ LMSTUDIO_MODEL=local-model
 
 Example provider YAML files are available in `configs/examples/`.
 
-Remote endpoints can receive the text, images, and context you submit. Keep the default local endpoint for private data unless you have reviewed the remote provider's retention and access controls.
+Remote endpoints can receive the text, images, and context you submit. Use an endpoint whose retention and access controls match your data.
 
 ## Common Commands
 
@@ -228,11 +228,11 @@ The configured model provider does not have vision support enabled.
 | --- | --- |
 | Endpoint not reachable | Confirm `INTENT2ACTION_BASE_URL` points to the server's `/v1` base URL and the server is running. |
 | Model not found | Set `INTENT2ACTION_MODEL` to the exact model ID exposed by your endpoint. |
-| API key rejected | Check `INTENT2ACTION_API_KEY`; use `not-needed` only for local endpoints that do not require auth. |
+| API key rejected | Check `INTENT2ACTION_API_KEY`; use `not-needed` only for endpoints that do not require auth. |
 | Image inference fails | Confirm the model is multimodal and supports OpenAI-compatible `image_url` message content. |
 | Invalid JSON from model | Try a stronger instruction-following model or enable JSON repair in config. |
-| Docker cannot reach local model | Use a host-accessible URL such as `http://host.docker.internal:1234/v1` on macOS or Windows. |
-| Remote provider sees private data | Use a local endpoint for sensitive content or review the remote provider's data policy. |
+| Docker cannot reach model server | Use a host-accessible URL such as `http://host.docker.internal:1234/v1` on macOS or Windows. |
+| Remote provider sees private data | Choose an endpoint whose data policy matches your privacy requirements. |
 
 ## Public API Contract
 
@@ -313,7 +313,7 @@ python scripts/benchmark.py \
 
 The benchmark reports schema success rate, latency mean/p50/p95/min/max, action coverage, intent coverage, action count, top action, and a weighted benchmark score. The score is a lightweight regression metric based on keyword coverage and safety checks; it is not a substitute for a larger human-labeled evaluation set.
 
-Latest local benchmark snapshot against LM Studio on 2026-05-13 using `google/gemma-4-e4b`:
+Latest benchmark snapshot against LM Studio on 2026-05-13 using `google/gemma-4-e4b`:
 
 | Metric | Value |
 | --- | ---: |
@@ -331,7 +331,7 @@ Accuracy note: the benchmark score is a heuristic regression signal. A stronger 
 
 `1.0.0` includes:
 
-- Local-first OpenAI-compatible provider.
+- OpenAI-compatible provider configuration.
 - Text and image FastAPI inference endpoints.
 - CLI for text, image, config, and version commands.
 - Streamlit UI.
@@ -340,7 +340,7 @@ Accuracy note: the benchmark score is a heuristic regression signal. A stronger 
 - CI for Python 3.11 and 3.12.
 - Release artifact build workflow.
 - Docker and docker-compose support.
-- Benchmark harness for live local model evaluation.
+- Benchmark harness for live model evaluation.
 
 ## Roadmap
 
@@ -351,7 +351,7 @@ Accuracy note: the benchmark score is a heuristic regression signal. A stronger 
 
 ## Contributing
 
-Contributions are welcome. Keep the project local-first, avoid paid external APIs in the default path, and preserve the core rule: infer actions only, never execute them.
+Contributions are welcome. Keep provider configuration generic, avoid hardcoding one hosted service as the only path, and preserve the core rule: infer actions only, never execute them.
 
 ## License
 

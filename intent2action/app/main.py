@@ -19,7 +19,7 @@ configure_logging(settings.log_level)
 
 app = FastAPI(
     title="intent2action",
-    description="Local-first multimodal action inference API.",
+    description="Multimodal action inference API for OpenAI-compatible model endpoints.",
     version=__version__,
 )
 
