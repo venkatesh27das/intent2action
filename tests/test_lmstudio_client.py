@@ -1,4 +1,4 @@
-"""LM Studio client tests."""
+"""OpenAI-compatible provider compatibility tests."""
 
 import json
 
@@ -6,9 +6,14 @@ import httpx
 import pytest
 
 from intent2action.providers.lmstudio_client import LMStudioClient, LMStudioError
+from intent2action.providers.openai_compatible_client import OpenAICompatibleClient
 
 
-def test_generate_text_uses_lmstudio_payload_shape() -> None:
+def test_legacy_lmstudio_client_import_still_works() -> None:
+    assert issubclass(LMStudioClient, OpenAICompatibleClient)
+
+
+def test_generate_text_uses_openai_compatible_payload_shape() -> None:
     captured: dict = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -29,7 +34,8 @@ def test_generate_text_uses_lmstudio_payload_shape() -> None:
     assert result == '{"ok": true}'
     assert captured["model"] == "test-model"
     assert captured["messages"] == [{"role": "user", "content": "hello"}]
-    assert captured["response_format"] == {"type": "text"}
+    assert captured["temperature"] == 0.1
+    assert "response_format" not in captured
 
 
 def test_generate_multimodal_uses_data_url() -> None:
@@ -66,6 +72,5 @@ def test_generate_text_raises_clear_error_on_http_failure() -> None:
         transport=httpx.MockTransport(handler),
     )
 
-    with pytest.raises(LMStudioError, match="Unable to reach LM Studio"):
+    with pytest.raises(LMStudioError, match="OpenAI-compatible model provider"):
         client.generate_text([{"role": "user", "content": "hello"}])
-

@@ -40,7 +40,11 @@ def test_health_endpoint() -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "service": "intent2action"}
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["service"] == "intent2action"
+    assert body["model_provider"]["type"] == "openai_compatible"
+    assert "api_key" not in body["model_provider"]
 
 
 def test_infer_actions_endpoint_uses_pipeline(monkeypatch) -> None:
@@ -81,4 +85,3 @@ def test_infer_actions_image_rejects_invalid_context(monkeypatch) -> None:
     )
 
     assert response.status_code == 400
-

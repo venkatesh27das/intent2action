@@ -14,7 +14,8 @@ from intent2action.core.missing_input_detector import MissingInputDetector
 from intent2action.core.output_validator import OutputValidator
 from intent2action.core.risk_scorer import RiskScorer
 from intent2action.core.text_parser import TextParser
-from intent2action.providers.lmstudio_client import LMStudioClient
+from intent2action.providers.factory import get_model_client
+from intent2action.providers.openai_compatible_client import OpenAICompatibleClient
 from intent2action.schemas.response import ActionInferenceResponse
 
 PROMPT_DIR = Path(__file__).resolve().parents[1] / "prompts"
@@ -31,15 +32,11 @@ class ActionInferencePipeline:
 
     def __init__(
         self,
-        llm_client: LMStudioClient | Any | None = None,
+        llm_client: OpenAICompatibleClient | Any | None = None,
         settings: Settings | None = None,
     ) -> None:
         self.settings = settings or get_settings()
-        self.llm_client = llm_client or LMStudioClient(
-            base_url=self.settings.lmstudio_base_url,
-            model=self.settings.lmstudio_model,
-            timeout_seconds=self.settings.lmstudio_timeout_seconds,
-        )
+        self.llm_client = llm_client or get_model_client(self.settings)
         self.input_classifier = InputClassifier()
         self.text_parser = TextParser()
         self.image_parser = ImageParser()

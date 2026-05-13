@@ -2,7 +2,7 @@
 
 intent2action is an open-source, local-first Python framework that converts text and image inputs into structured, ranked action candidates.
 
-It is built for developers who want a clean action inference layer in front of downstream agents, automation systems, or human review workflows. It calls local text or multimodal models through LM Studio's OpenAI-compatible API and returns validated JSON.
+It is built for developers who want a clean action inference layer in front of downstream agents, automation systems, or human review workflows. It calls text or multimodal models through any OpenAI-compatible chat completions endpoint and returns validated JSON.
 
 This project does not execute actions. It only infers possible actions.
 
@@ -21,7 +21,7 @@ This project does not execute actions. It only infers possible actions.
 - It does not create tickets.
 - It does not update records.
 - It does not trigger deployments, approvals, payments, or tools.
-- It does not call cloud LLM APIs in the MVP.
+- It does not execute any action proposed by the model.
 
 ## Why It Exists
 
@@ -58,28 +58,69 @@ Copy the example environment file if you want local overrides:
 cp .env.example .env
 ```
 
-## LM Studio Setup
+## Model Provider Configuration
 
-Start LM Studio locally, load a text or multimodal model, and enable the local OpenAI-compatible server.
+intent2action is local-first by default and supports any OpenAI-compatible endpoint that exposes `/v1/chat/completions`, including LM Studio, Ollama's OpenAI-compatible endpoint, vLLM, llama.cpp servers, compatible TGI deployments, OpenAI, and self-hosted servers.
 
-Default settings:
+Generic configuration:
+
+```bash
+INTENT2ACTION_BASE_URL=http://localhost:1234/v1
+INTENT2ACTION_API_KEY=not-needed
+INTENT2ACTION_MODEL=local-model
+INTENT2ACTION_TIMEOUT_SECONDS=120
+INTENT2ACTION_MAX_RETRIES=2
+INTENT2ACTION_SUPPORTS_VISION=true
+```
+
+Environment priority is:
+
+1. `INTENT2ACTION_*` variables
+2. legacy `LMSTUDIO_*` variables
+3. `configs/default.yaml`
+
+LM Studio example:
+
+```bash
+INTENT2ACTION_BASE_URL=http://localhost:1234/v1
+INTENT2ACTION_API_KEY=not-needed
+INTENT2ACTION_MODEL=gemma-4-local
+```
+
+Ollama OpenAI-compatible endpoint example:
+
+```bash
+INTENT2ACTION_BASE_URL=http://localhost:11434/v1
+INTENT2ACTION_API_KEY=not-needed
+INTENT2ACTION_MODEL=llava:latest
+```
+
+vLLM example:
+
+```bash
+INTENT2ACTION_BASE_URL=http://localhost:8000/v1
+INTENT2ACTION_API_KEY=not-needed
+INTENT2ACTION_MODEL=Qwen2.5-VL-7B-Instruct
+```
+
+OpenAI example:
+
+```bash
+INTENT2ACTION_BASE_URL=https://api.openai.com/v1
+INTENT2ACTION_API_KEY=<your_api_key>
+INTENT2ACTION_MODEL=gpt-4o-mini
+```
+
+Legacy LM Studio variables are still supported:
 
 ```bash
 LMSTUDIO_BASE_URL=http://localhost:1234/v1
 LMSTUDIO_MODEL=local-model
 ```
 
-Set `LMSTUDIO_MODEL` to the exact model ID shown by LM Studio, for example:
+Vision support depends on the model and endpoint. Text-only models can still use `/infer-actions`. `/infer-actions/image` requires a multimodal model and an endpoint that supports the OpenAI-compatible image message format.
 
-```bash
-LMSTUDIO_MODEL=google/gemma-4-e4b
-```
-
-For Docker on macOS or Windows, LM Studio usually needs to be reachable from containers at:
-
-```bash
-LMSTUDIO_BASE_URL=http://host.docker.internal:1234/v1
-```
+For Docker on macOS or Windows, a host model server usually needs to be reachable from containers at an address such as `http://host.docker.internal:1234/v1`.
 
 ## Run The API
 
@@ -158,7 +199,7 @@ streamlit run intent2action/ui/streamlit_app.py
 intent2action/
   app/          FastAPI app and config
   core/         Pipeline steps and deterministic scoring
-  providers/    LM Studio client
+  providers/    OpenAI-compatible model clients
   schemas/      Pydantic v2 request and response models
   registry/     Action ontology, intent taxonomy, risk rules
   prompts/      System and task prompts
@@ -178,7 +219,7 @@ API: `http://localhost:8000`
 
 UI: `http://localhost:8501`
 
-LM Studio is assumed to run separately on the host machine. Set `LMSTUDIO_BASE_URL` to a host-accessible address if needed.
+A model server is assumed to run separately on the host machine unless you configure a remote endpoint. Set `INTENT2ACTION_BASE_URL` to a host-accessible address if needed.
 
 ## Tests And Linting
 
@@ -187,11 +228,11 @@ pytest
 ruff check .
 ```
 
-Tests do not require LM Studio. The pipeline tests use a mocked local model client.
+Tests do not require a real model server. The provider and pipeline tests use mocked responses.
 
 ## Benchmarking
 
-Run the live benchmark against LM Studio:
+Run the live benchmark against an OpenAI-compatible endpoint:
 
 ```bash
 python scripts/benchmark.py --model google/gemma-4-e4b --runs 1 --output reports/benchmark_report.json
@@ -236,7 +277,7 @@ Accuracy note: the benchmark score is a heuristic regression signal. It checks s
 
 `0.1.0` includes:
 
-- Local-first LM Studio provider only.
+- Local-first OpenAI-compatible provider.
 - Text and image FastAPI inference endpoints.
 - Streamlit UI.
 - Strict schemas and deterministic post-processing.
@@ -249,7 +290,7 @@ Accuracy note: the benchmark score is a heuristic regression signal. It checks s
 
 - Add richer action ontology metadata.
 - Add optional local embedding-based deduplication.
-- Add provider adapters for other local OpenAI-compatible runtimes.
+- Add provider adapters for non-OpenAI-compatible runtimes.
 - Add structured evaluation fixtures.
 - Add CLI support.
 

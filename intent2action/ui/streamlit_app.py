@@ -4,8 +4,11 @@ from typing import Any
 
 import streamlit as st
 
+from intent2action.app.config import get_settings
 from intent2action.core.pipeline import ActionInferencePipeline
-from intent2action.providers.lmstudio_client import LMStudioError
+from intent2action.providers.openai_compatible_client import OpenAICompatibleClientError
+
+settings = get_settings()
 
 
 @st.cache_resource
@@ -89,6 +92,12 @@ st.caption("Convert text and images into structured action candidates")
 
 left, right = st.columns([1, 2])
 
+with st.sidebar:
+    st.subheader("Model provider")
+    st.write(f"Base URL: `{settings.model_base_url}`")
+    st.write(f"Model: `{settings.model_name}`")
+    st.write(f"Vision enabled: `{settings.model_supports_vision}`")
+
 with left:
     input_type = st.radio("Input type", ["Text", "Image"], horizontal=True)
     context = context_fields()
@@ -114,13 +123,18 @@ with right:
                     if image_file is None:
                         st.error("Image upload is required.")
                         st.stop()
+                    if not pipeline.settings.model_supports_vision:
+                        st.error(
+                            "The configured model provider does not have vision support enabled."
+                        )
+                        st.stop()
                     result = pipeline.infer_from_image(
                         image_bytes=image_file.getvalue(),
                         filename=image_file.name,
                         context=context,
                     )
             render_response(result)
-        except LMStudioError as exc:
+        except OpenAICompatibleClientError as exc:
             st.error(str(exc))
         except Exception as exc:
             st.error(f"Action inference failed: {exc}")

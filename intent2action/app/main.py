@@ -7,7 +7,8 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
 from intent2action.app.config import get_settings
 from intent2action.core.pipeline import ActionInferencePipeline
-from intent2action.providers.lmstudio_client import LMStudioError
+from intent2action.providers.factory import get_model_client
+from intent2action.providers.openai_compatible_client import OpenAICompatibleClientError
 from intent2action.schemas.request import ActionInferenceRequest
 from intent2action.schemas.response import ActionInferenceResponse
 from intent2action.utils.logging import configure_logging
@@ -29,10 +30,26 @@ def get_pipeline() -> ActionInferencePipeline:
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+def health() -> dict[str, Any]:
     """Return service health."""
 
-    return {"status": "ok", "service": "intent2action"}
+    return {
+        "status": "ok",
+        "service": "intent2action",
+        "model_provider": {
+            "type": settings.model_provider_type,
+            "base_url": settings.model_base_url,
+            "model": settings.model_name,
+            "supports_vision": settings.model_supports_vision,
+        },
+    }
+
+
+@app.get("/health/model")
+def health_model() -> dict[str, Any]:
+    """Return best-effort model provider health without exposing credentials."""
+
+    return get_model_client(settings).health_check()
 
 
 @app.post("/infer-actions", response_model=ActionInferenceResponse)
@@ -41,7 +58,7 @@ def infer_actions(request: ActionInferenceRequest) -> ActionInferenceResponse:
 
     try:
         return get_pipeline().infer_from_text(request.content, request.context)
-    except LMStudioError as exc:
+    except OpenAICompatibleClientError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Action inference failed: {exc}") from exc
@@ -71,7 +88,7 @@ async def infer_actions_image(
             filename=image.filename or "uploaded_image.png",
             context=parsed_context,
         )
-    except LMStudioError as exc:
+    except OpenAICompatibleClientError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         detail = f"Image action inference failed: {exc}"

@@ -1,4 +1,4 @@
-"""Benchmark live intent2action inference against LM Studio."""
+"""Benchmark live intent2action inference against an OpenAI-compatible endpoint."""
 
 from __future__ import annotations
 
@@ -274,16 +274,25 @@ def main() -> int:
     parser.add_argument("--image-cases", default="benchmarks/image_cases.yaml")
     parser.add_argument("--include-images", action="store_true")
     parser.add_argument("--runs", type=int, default=1)
-    parser.add_argument("--base-url", default=os.getenv("LMSTUDIO_BASE_URL", "http://localhost:1234/v1"))
-    parser.add_argument("--model", default=os.getenv("LMSTUDIO_MODEL", "local-model"))
+    parser.add_argument(
+        "--base-url",
+        default=os.getenv(
+            "INTENT2ACTION_BASE_URL",
+            os.getenv("LMSTUDIO_BASE_URL", "http://localhost:1234/v1"),
+        ),
+    )
+    parser.add_argument(
+        "--model",
+        default=os.getenv("INTENT2ACTION_MODEL", os.getenv("LMSTUDIO_MODEL", "local-model")),
+    )
     parser.add_argument("--timeout", type=float, default=120.0)
     parser.add_argument("--output", default=None)
     args = parser.parse_args()
 
     settings = Settings(
-        lmstudio_base_url=args.base_url,
-        lmstudio_model=args.model,
-        lmstudio_timeout_seconds=args.timeout,
+        model_base_url=args.base_url,
+        model_name=args.model,
+        model_timeout_seconds=args.timeout,
     )
     pipeline = ActionInferencePipeline(settings=settings)
     image_cases = Path(args.image_cases) if args.include_images else None
