@@ -55,11 +55,9 @@ Output shape:
 
 ## Image Example
 
-The repository includes an example sales chart image at:
+The repository includes this example sales chart image:
 
-```text
-benchmarks/example slaes plot.png
-```
+![Sales history chart example](benchmarks/example%20slaes%20plot.png)
 
 Run image inference against it:
 
@@ -68,14 +66,68 @@ intent2action infer-image "benchmarks/example slaes plot.png" \
   --context '{"domain":"sales_analytics","user_role":"finance_analyst"}'
 ```
 
-For a chart like this, intent2action should infer review-oriented actions such as:
+Example output from `google/gemma-4-e4b` through LM Studio:
 
-- Investigate the sharp drop in cashed-in percentage.
-- Compare February and March invoiced versus cashed amounts.
-- Ask for business context around the latest period.
-- Prepare a finance review summary without updating any records.
+```json
+{
+  "input_summary": "A sales history chart showing Total invoiced, Total cashed in (€), and Total cashed in (%) from March 2022 to March 2023. The graph highlights key metrics for February 2023.",
+  "input_type": "image",
+  "extracted_entities": [
+    {
+      "name": "Chart Title",
+      "value": "Sales history",
+      "entity_type": "chart_title",
+      "confidence": 1.0
+    },
+    {
+      "name": "Metric: Total invoiced (Feb 2023)",
+      "value": "12,014.70 k€",
+      "entity_type": "financial_metric",
+      "confidence": 0.95
+    },
+    {
+      "name": "Metric: Total cashed in (%) (Feb 2023)",
+      "value": "21.26%",
+      "entity_type": "percentage_metric",
+      "confidence": 0.95
+    }
+  ],
+  "detected_intents": [
+    {
+      "intent": "Analyze sales trends and performance",
+      "confidence": 0.98
+    },
+    {
+      "intent": "Generate a summary report of key findings",
+      "confidence": 0.95
+    }
+  ],
+  "possible_actions": [
+    {
+      "action_name": "Extract raw data table from chart",
+      "risk_level": "low",
+      "execution_mode": "auto_possible"
+    },
+    {
+      "action_name": "Generate a presentation slide with key insights",
+      "risk_level": "low",
+      "execution_mode": "draft_only"
+    },
+    {
+      "action_name": "Draft a performance summary email",
+      "risk_level": "medium",
+      "execution_mode": "human_approval_required"
+    }
+  ],
+  "clarifying_questions": [
+    "Are you looking to extract the raw data from this chart for further analysis?",
+    "Do you need me to summarize any specific trend or period shown in the graph?"
+  ],
+  "warnings": []
+}
+```
 
-The exact wording depends on the configured model, but the response should still follow the same `ActionInferenceResponse` JSON schema.
+The exact wording depends on the configured model, but the response follows the same `ActionInferenceResponse` JSON schema and still does not execute any action.
 
 ## Quick Start
 
@@ -298,6 +350,7 @@ The configured model provider does not have vision support enabled.
 | Problem | What to check |
 | --- | --- |
 | Endpoint not reachable | Confirm `INTENT2ACTION_BASE_URL` points to the server's `/v1` base URL and the server is running. |
+| `curl` works but Python fails to connect | Check whether your terminal, container, notebook, or sandbox blocks Python network access to localhost. Run `python -c "import httpx; print(httpx.get('http://localhost:1234/v1/models').status_code)"` from the same environment that runs intent2action. |
 | Model not found | Set `INTENT2ACTION_MODEL` to the exact model ID exposed by your endpoint. |
 | API key rejected | Check `INTENT2ACTION_API_KEY`; use `not-needed` only for endpoints that do not require auth. |
 | Image inference fails | Confirm the model is multimodal and supports OpenAI-compatible `image_url` message content. |
