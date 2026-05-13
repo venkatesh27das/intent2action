@@ -1,14 +1,61 @@
 # intent2action
 
-intent2action converts text and images into structured, ranked action candidates.
+Turn messy text or screenshots into structured, ranked action candidates.
 
-It works with any OpenAI-compatible `/v1/chat/completions` endpoint and returns validated JSON that downstream systems or humans can review.
+intent2action is a Python framework for the step before automation: understanding what could be done, what information is missing, how risky each action is, and whether a human should review it. It works with any OpenAI-compatible `/v1/chat/completions` endpoint and returns validated JSON for apps, APIs, agents, dashboards, or review queues.
 
 intent2action never executes actions. It does not send emails, create tickets, update records, trigger deployments, approve payments, or call tools.
 
+## At A Glance
+
+| Capability | What you get |
+| --- | --- |
+| Text and image inputs | Customer emails, meeting notes, requirements, support messages, screenshots, dashboards, forms. |
+| Structured JSON | Pydantic-validated entities, intents, action candidates, missing inputs, risk levels, and warnings. |
+| Any compatible model endpoint | LM Studio, Ollama, vLLM, llama.cpp servers, OpenAI, Azure-style compatible gateways, or your own `/v1/chat/completions` server. |
+| Safe by design | The package infers possible actions only. Execution belongs to your app, policy layer, or human workflow. |
+
+## Real-World Use Cases
+
+| Use case | Example input | Useful output |
+| --- | --- | --- |
+| Customer support triage | "The invoice total is wrong and the client is upset." | Investigate billing discrepancy, collect invoice ID, draft customer follow-up, flag medium risk. |
+| Data and BI operations | "Sales dashboard has been blank since yesterday." | Check dashboard refresh, inspect source query, ask for dashboard URL, rank investigation actions. |
+| Product and engineering intake | "Users need SSO with Okta before enterprise rollout." | Break down implementation tasks, identify missing tenant details, classify requirement intent. |
+| Meeting follow-up | Notes from a planning call. | Extract owners, decisions, follow-up actions, missing deadlines, and clarifying questions. |
+| Screenshot understanding | Screenshot of an error modal or broken dashboard. | Infer likely remediation steps from visual context and request missing environment details. |
+| Human approval queues | Any unstructured request before automation. | Produce action candidates with `execution_mode`, `risk_level`, and required inputs for review. |
+
+## Tiny Example
+
+Input:
+
+```text
+Client is asking why the sales dashboard is blank since yesterday.
+```
+
+Output shape:
+
+```json
+{
+  "input_type": "text",
+  "detected_intents": [
+    {"intent": "issue_investigation", "confidence": 0.9}
+  ],
+  "possible_actions": [
+    {
+      "action_name": "Investigate dashboard refresh",
+      "missing_inputs": ["dashboard_link"],
+      "risk_level": "low",
+      "execution_mode": "human_approval_required"
+    }
+  ]
+}
+```
+
 ## Quick Start
 
-Install the project:
+Install:
 
 ```bash
 python3.11 -m venv venv
@@ -17,7 +64,7 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-Start an OpenAI-compatible model server, for example LM Studio on `http://localhost:1234/v1`, then set your model in `.env`:
+Configure a model endpoint, for example LM Studio on `http://localhost:1234/v1`:
 
 ```bash
 INTENT2ACTION_BASE_URL=http://localhost:1234/v1
@@ -26,19 +73,19 @@ INTENT2ACTION_MODEL=local-model
 INTENT2ACTION_SUPPORTS_VISION=true
 ```
 
-Run your first text inference:
+Run text inference:
 
 ```bash
 intent2action infer --text "Client is asking why the sales dashboard is blank since yesterday."
 ```
 
-Run your first image inference:
+Run image inference:
 
 ```bash
 intent2action infer-image screenshot.png --context '{"domain":"data_analytics"}'
 ```
 
-Check the active non-secret configuration:
+Check non-secret configuration:
 
 ```bash
 intent2action config
