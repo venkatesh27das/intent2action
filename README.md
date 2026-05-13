@@ -1,6 +1,6 @@
 # intent2action
 
-Turn messy text or screenshots into structured, ranked action candidates.
+Turn messy text or images into structured, ranked action candidates.
 
 intent2action is a Python framework for the step before automation: understanding what could be done, what information is missing, how risky each action is, and whether a human should review it. It works with any OpenAI-compatible `/v1/chat/completions` endpoint and returns validated JSON for apps, APIs, agents, dashboards, or review queues.
 
@@ -10,7 +10,7 @@ intent2action never executes actions. It does not send emails, create tickets, u
 
 | Capability | What you get |
 | --- | --- |
-| Text and image inputs | Customer emails, meeting notes, requirements, support messages, screenshots, dashboards, forms. |
+| Text and image inputs | Customer emails, meeting notes, requirements, support messages, UI images, dashboards, forms. |
 | Structured JSON | Pydantic-validated entities, intents, action candidates, missing inputs, risk levels, and warnings. |
 | Any compatible model endpoint | LM Studio, Ollama, vLLM, llama.cpp servers, OpenAI, Azure-style compatible gateways, or your own `/v1/chat/completions` server. |
 | Safe by design | The package infers possible actions only. Execution belongs to your app, policy layer, or human workflow. |
@@ -23,7 +23,7 @@ intent2action never executes actions. It does not send emails, create tickets, u
 | Data and BI operations | "Sales dashboard has been blank since yesterday." | Check dashboard refresh, inspect source query, ask for dashboard URL, rank investigation actions. |
 | Product and engineering intake | "Users need SSO with Okta before enterprise rollout." | Break down implementation tasks, identify missing tenant details, classify requirement intent. |
 | Meeting follow-up | Notes from a planning call. | Extract owners, decisions, follow-up actions, missing deadlines, and clarifying questions. |
-| Screenshot understanding | Screenshot of an error modal or broken dashboard. | Infer likely remediation steps from visual context and request missing environment details. |
+| Image understanding | Image of an error modal, form, dashboard, document, or workflow state. | Infer likely remediation steps from visual context and request missing details. |
 | Human approval queues | Any unstructured request before automation. | Produce action candidates with `execution_mode`, `risk_level`, and required inputs for review. |
 
 ## Tiny Example
@@ -82,7 +82,7 @@ intent2action infer --text "Client is asking why the sales dashboard is blank si
 Run image inference:
 
 ```bash
-intent2action infer-image screenshot.png --context '{"domain":"data_analytics"}'
+intent2action infer-image image.png --context '{"domain":"data_analytics"}'
 ```
 
 Check non-secret configuration:
@@ -138,7 +138,7 @@ intent2action version
 intent2action config
 intent2action infer --text "Break this customer email into possible follow-up actions."
 intent2action infer --file examples/text_inputs/customer_email.txt
-intent2action infer-image screenshot.png --context '{"user_role":"analyst"}'
+intent2action infer-image image.png --context '{"user_role":"analyst"}'
 ```
 
 FastAPI:
@@ -187,7 +187,7 @@ Image inference:
 
 ```bash
 curl -X POST http://localhost:8000/infer-actions/image \
-  -F "image=@screenshot.png" \
+  -F "image=@image.png" \
   -F 'context={"domain":"data_analytics","user_role":"business_analyst"}'
 ```
 
