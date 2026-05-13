@@ -446,12 +446,25 @@ Latest benchmark snapshot against LM Studio on 2026-05-13 using `google/gemma-4-
 | Metric | Value |
 | --- | ---: |
 | Text cases | 4 |
+| Image cases | 1 |
 | Schema success rate | 100% |
-| Mean latency | 22.95s |
-| p50 latency | 20.25s |
-| p95 latency | 29.85s |
-| Min / max latency | 19.83s / 31.49s |
-| Mean benchmark score | 0.8969 |
+| Mean latency | 27.57s |
+| p50 latency | 23.46s |
+| p95 latency | 36.97s |
+| Min / max latency | 20.81s / 37.43s |
+| Mean benchmark score | 0.9200 |
+
+Per-case scores from that run:
+
+| Case | Type | Score | Latency |
+| --- | --- | ---: | ---: |
+| dashboard_issue | text | 1.0000 | 21.00s |
+| meeting_notes | text | 1.0000 | 23.46s |
+| requirement_breakdown | text | 0.8375 | 35.13s |
+| customer_email | text | 0.8375 | 20.81s |
+| invoice_duplicate_charge_image | image | 0.9250 | 37.43s |
+
+Pipeline timing from this run showed that latency was dominated by model generation. Parsing, validation, and post-processing each stayed under 0.01s per case.
 
 Accuracy note: the benchmark score is a heuristic regression signal. A stronger accuracy claim requires a larger human-labeled evaluation set.
 
