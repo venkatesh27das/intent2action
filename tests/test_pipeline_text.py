@@ -65,6 +65,8 @@ def test_text_pipeline_with_mocked_model() -> None:
     assert response.input_type == "text"
     assert response.possible_actions[0].missing_inputs == ["dashboard_url"]
     assert response.possible_actions[0].ranking_score > 0
+    assert isinstance(response.raw_model_output, dict)
+    assert "pipeline_timings" in response.raw_model_output
 
 
 class FakeExecutionClaimClient(FakeLMStudioClient):

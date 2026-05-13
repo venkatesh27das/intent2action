@@ -23,6 +23,7 @@ class LMStudioClient(OpenAICompatibleClient):
         timeout_seconds: int | float = 120,
         max_retries: int | None = None,
         retries: int = 2,
+        max_tokens: int | None = None,
         supports_vision: bool = True,
         transport: httpx.BaseTransport | None = None,
     ) -> None:
@@ -32,6 +33,7 @@ class LMStudioClient(OpenAICompatibleClient):
             model=model,
             timeout_seconds=timeout_seconds,
             max_retries=max_retries if max_retries is not None else retries,
+            max_tokens=max_tokens,
             supports_vision=supports_vision,
             transport=transport,
         )

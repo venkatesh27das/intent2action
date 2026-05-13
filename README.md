@@ -185,7 +185,9 @@ INTENT2ACTION_API_KEY=not-needed
 INTENT2ACTION_MODEL=local-model
 INTENT2ACTION_TIMEOUT_SECONDS=120
 INTENT2ACTION_MAX_RETRIES=2
+INTENT2ACTION_MAX_TOKENS=
 INTENT2ACTION_SUPPORTS_VISION=true
+INTENT2ACTION_IMAGE_MAX_DIMENSION=1280
 ```
 
 Environment priority is:
@@ -338,6 +340,8 @@ Image inference requires:
 - A multimodal model.
 - An endpoint that accepts OpenAI-compatible image message payloads.
 - `INTENT2ACTION_SUPPORTS_VISION=true`.
+
+Large images are downscaled before base64 encoding when either dimension exceeds `INTENT2ACTION_IMAGE_MAX_DIMENSION`, which defaults to `1280`. Set it to an empty value or `0` to disable resizing.
 
 If vision is disabled, the Streamlit UI and provider client return:
 

@@ -1,5 +1,6 @@
 """End-to-end action inference pipeline."""
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -72,16 +73,30 @@ class ActionInferencePipeline:
         """Infer action candidates from text."""
 
         input_type = self.input_classifier.classify("text")
+        parse_started = time.perf_counter()
         parsed = self.text_parser.parse(content, context)
         prompt = self._build_text_prompt(parsed)
+        parse_seconds = time.perf_counter() - parse_started
+        model_started = time.perf_counter()
         raw = self.llm_client.generate_text(
             [
                 {"role": "system", "content": load_prompt("system_prompt.md")},
                 {"role": "user", "content": prompt},
             ]
         )
+        model_seconds = time.perf_counter() - model_started
+        validation_started = time.perf_counter()
         response = self.output_validator.validate(raw)
-        return self._post_process_response(response, input_type, raw)
+        validation_seconds = time.perf_counter() - validation_started
+        post_process_started = time.perf_counter()
+        processed = self._post_process_response(response, input_type, raw)
+        return self._with_pipeline_timings(
+            processed,
+            parse_seconds=parse_seconds,
+            model_seconds=model_seconds,
+            validation_seconds=validation_seconds,
+            post_process_seconds=time.perf_counter() - post_process_started,
+        )
 
     def infer_from_image(
         self,
@@ -92,15 +107,36 @@ class ActionInferencePipeline:
         """Infer action candidates from an image."""
 
         input_type = self.input_classifier.classify("image")
-        parsed = self.image_parser.parse(image_bytes, filename, context)
+        parse_started = time.perf_counter()
+        parsed = self.image_parser.parse(
+            image_bytes,
+            filename,
+            context,
+            max_dimension=self.settings.image_max_dimension,
+        )
         prompt = self._build_image_prompt(parsed)
+        parse_seconds = time.perf_counter() - parse_started
+        model_started = time.perf_counter()
         raw = self.llm_client.generate_multimodal(
             prompt=prompt,
             image_base64=parsed["image_base64"],
             mime_type=parsed["mime_type"],
         )
+        model_seconds = time.perf_counter() - model_started
+        validation_started = time.perf_counter()
         response = self.output_validator.validate(raw)
-        return self._post_process_response(response, input_type, raw)
+        validation_seconds = time.perf_counter() - validation_started
+        post_process_started = time.perf_counter()
+        processed = self._post_process_response(response, input_type, raw)
+        return self._with_pipeline_timings(
+            processed,
+            parse_seconds=parse_seconds,
+            model_seconds=model_seconds,
+            validation_seconds=validation_seconds,
+            post_process_seconds=time.perf_counter() - post_process_started,
+            original_image_bytes=parsed["original_image_bytes"],
+            optimized_image_bytes=parsed["optimized_image_bytes"],
+        )
 
     def _post_process_response(
         self,
@@ -165,6 +201,22 @@ class ActionInferencePipeline:
             f"Context:\n{parsed['context']}\n\n"
             "Inspect the image and infer structured action candidates."
         )
+
+    @staticmethod
+    def _with_pipeline_timings(
+        response: ActionInferenceResponse,
+        **timings: float | int,
+    ) -> ActionInferenceResponse:
+        raw_model_output = response.raw_model_output
+        if isinstance(raw_model_output, dict):
+            metadata = dict(raw_model_output)
+        else:
+            metadata = {"model_output": raw_model_output} if raw_model_output else {}
+        metadata["pipeline_timings"] = {
+            key: round(value, 4) if isinstance(value, float) else value
+            for key, value in timings.items()
+        }
+        return response.model_copy(update={"raw_model_output": metadata})
 
 
 def _contains_execution_claim(action: Any) -> bool:

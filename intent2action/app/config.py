@@ -44,7 +44,9 @@ class Settings(BaseSettings):
     model_name: str = Field(default="local-model", alias="INTENT2ACTION_MODEL")
     model_timeout_seconds: int = Field(default=120, alias="INTENT2ACTION_TIMEOUT_SECONDS")
     model_max_retries: int = Field(default=2, alias="INTENT2ACTION_MAX_RETRIES")
+    model_max_tokens: int | None = Field(default=None, alias="INTENT2ACTION_MAX_TOKENS")
     model_supports_vision: bool = Field(default=True, alias="INTENT2ACTION_SUPPORTS_VISION")
+    image_max_dimension: int | None = Field(default=1280, alias="INTENT2ACTION_IMAGE_MAX_DIMENSION")
 
     lmstudio_base_url: str = Field(default="http://localhost:1234/v1", alias="LMSTUDIO_BASE_URL")
     lmstudio_model: str = Field(default="local-model", alias="LMSTUDIO_MODEL")
@@ -91,9 +93,17 @@ def get_settings() -> Settings:
         "INTENT2ACTION_MAX_RETRIES",
         model_provider.get("max_retries", 2),
     )
+    max_tokens = _env_or_default(
+        "INTENT2ACTION_MAX_TOKENS",
+        model_provider.get("max_tokens"),
+    )
     supports_vision = _env_or_default(
         "INTENT2ACTION_SUPPORTS_VISION",
         model_provider.get("supports_vision", True),
+    )
+    image_max_dimension = _env_or_default(
+        "INTENT2ACTION_IMAGE_MAX_DIMENSION",
+        model_provider.get("image_max_dimension", 1280),
     )
     api_key = _env_or_default(
         "INTENT2ACTION_API_KEY",
@@ -107,7 +117,9 @@ def get_settings() -> Settings:
         model_name=str(model_name),
         model_timeout_seconds=int(timeout_seconds),
         model_max_retries=int(max_retries),
+        model_max_tokens=_parse_optional_int(max_tokens),
         model_supports_vision=_parse_bool(supports_vision),
+        image_max_dimension=_parse_optional_int(image_max_dimension),
         lmstudio_base_url=str(base_url),
         lmstudio_model=str(model_name),
         lmstudio_timeout_seconds=int(timeout_seconds),
@@ -127,3 +139,13 @@ def _parse_bool(value: Any) -> bool:
     if isinstance(value, bool):
         return value
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _parse_optional_int(value: Any) -> int | None:
+    if value is None:
+        return None
+    rendered = str(value).strip()
+    if not rendered:
+        return None
+    parsed = int(rendered)
+    return parsed if parsed > 0 else None

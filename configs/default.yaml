@@ -5,7 +5,9 @@ model_provider:
   model: "local-model"
   timeout_seconds: 120
   max_retries: 2
+  max_tokens: null
   supports_vision: true
+  image_max_dimension: 1280
 
 inference:
   max_actions: 8

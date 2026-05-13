@@ -13,6 +13,7 @@ def test_provider_factory_returns_openai_compatible_client() -> None:
         model_base_url="http://testserver/v1",
         model_api_key="not-needed",
         model_name="test-model",
+        model_max_tokens=256,
     )
 
     client = get_model_client(settings)
@@ -20,6 +21,7 @@ def test_provider_factory_returns_openai_compatible_client() -> None:
     assert isinstance(client, OpenAICompatibleClient)
     assert client.base_url == "http://testserver/v1"
     assert client.model == "test-model"
+    assert client.max_tokens == 256
 
 
 def test_provider_factory_rejects_unknown_provider() -> None:

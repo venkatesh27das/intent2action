@@ -20,6 +20,8 @@ def test_config_env_priority_new_vars_over_legacy_vars(monkeypatch) -> None:
     monkeypatch.setenv("INTENT2ACTION_BASE_URL", "http://new/v1")
     monkeypatch.setenv("INTENT2ACTION_MODEL", "new-model")
     monkeypatch.setenv("INTENT2ACTION_API_KEY", "new-key")
+    monkeypatch.setenv("INTENT2ACTION_MAX_TOKENS", "512")
+    monkeypatch.setenv("INTENT2ACTION_IMAGE_MAX_DIMENSION", "640")
     config.get_settings.cache_clear()
 
     settings = config.get_settings()
@@ -27,6 +29,8 @@ def test_config_env_priority_new_vars_over_legacy_vars(monkeypatch) -> None:
     assert settings.model_base_url == "http://new/v1"
     assert settings.model_name == "new-model"
     assert settings.model_api_key == "new-key"
+    assert settings.model_max_tokens == 512
+    assert settings.image_max_dimension == 640
     assert settings.lmstudio_base_url == "http://new/v1"
     assert settings.lmstudio_model == "new-model"
 

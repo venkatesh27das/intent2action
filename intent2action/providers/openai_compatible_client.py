@@ -55,6 +55,7 @@ class OpenAICompatibleClient:
         model: str,
         timeout_seconds: int | float = 120,
         max_retries: int = 2,
+        max_tokens: int | None = None,
         supports_vision: bool = True,
         transport: httpx.BaseTransport | None = None,
     ) -> None:
@@ -63,8 +64,25 @@ class OpenAICompatibleClient:
         self.model = model
         self.timeout = httpx.Timeout(timeout_seconds)
         self.max_retries = max_retries
+        self.max_tokens = max_tokens
         self.supports_vision = supports_vision
         self.transport = transport
+        self._client = httpx.Client(
+            timeout=self.timeout,
+            transport=self.transport,
+            headers=self._headers(),
+        )
+
+    def close(self) -> None:
+        """Close the underlying HTTP client."""
+
+        self._client.close()
+
+    def __enter__(self) -> OpenAICompatibleClient:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
 
     def generate_text(
         self,
@@ -78,6 +96,7 @@ class OpenAICompatibleClient:
             "messages": messages,
             "temperature": temperature,
         }
+        self._add_max_tokens(payload)
         return self._chat_completion(payload)
 
     def generate_multimodal(
@@ -113,6 +132,7 @@ class OpenAICompatibleClient:
             ],
             "temperature": temperature,
         }
+        self._add_max_tokens(payload)
         return self._chat_completion(payload)
 
     def health_check(self) -> dict[str, Any]:
@@ -125,12 +145,7 @@ class OpenAICompatibleClient:
             "supports_vision": self.supports_vision,
         }
         try:
-            with httpx.Client(
-                timeout=self.timeout,
-                transport=self.transport,
-                headers=self._headers(),
-            ) as client:
-                response = client.get(f"{self.base_url}/models")
+            response = self._client.get(f"{self.base_url}/models")
             status["reachable"] = response.status_code < 500
             status["models_endpoint_status"] = response.status_code
         except httpx.HTTPError as exc:
@@ -145,14 +160,9 @@ class OpenAICompatibleClient:
 
         for attempt in range(self.max_retries + 1):
             try:
-                with httpx.Client(
-                    timeout=self.timeout,
-                    transport=self.transport,
-                    headers=self._headers(),
-                ) as client:
-                    response = client.post(url, json=payload)
-                    response.raise_for_status()
-                    data = response.json()
+                response = self._client.post(url, json=payload)
+                response.raise_for_status()
+                data = response.json()
                 return self._extract_content(data)
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
                 last_error = exc
@@ -193,6 +203,10 @@ class OpenAICompatibleClient:
         if self.api_key and self.api_key != "not-needed":
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
+
+    def _add_max_tokens(self, payload: dict[str, Any]) -> None:
+        if self.max_tokens is not None:
+            payload["max_tokens"] = self.max_tokens
 
     def _http_error(self, exc: httpx.HTTPStatusError) -> OpenAICompatibleClientError:
         status_code = exc.response.status_code

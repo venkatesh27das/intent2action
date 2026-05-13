@@ -43,6 +43,26 @@ def test_openai_compatible_client_text_request_building() -> None:
     }
 
 
+def test_openai_compatible_client_includes_max_tokens_when_configured() -> None:
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.update(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": "done"}}]})
+
+    client = OpenAICompatibleClient(
+        base_url="http://testserver/v1",
+        api_key=None,
+        model="test-model",
+        max_tokens=512,
+        transport=httpx.MockTransport(handler),
+    )
+
+    client.generate_text([{"role": "user", "content": "hello"}])
+
+    assert captured["max_tokens"] == 512
+
+
 def test_openai_compatible_client_multimodal_request_building() -> None:
     captured: dict = {}
 

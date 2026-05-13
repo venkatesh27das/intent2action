@@ -20,5 +20,6 @@ def get_model_client(config: Any) -> OpenAICompatibleClient:
         model=config.model_name,
         timeout_seconds=config.model_timeout_seconds,
         max_retries=config.model_max_retries,
+        max_tokens=config.model_max_tokens,
         supports_vision=config.model_supports_vision,
     )

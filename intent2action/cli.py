@@ -92,7 +92,9 @@ def _print_config() -> int:
             "model": settings.model_name,
             "timeout_seconds": settings.model_timeout_seconds,
             "max_retries": settings.model_max_retries,
+            "max_tokens": settings.model_max_tokens,
             "supports_vision": settings.model_supports_vision,
+            "image_max_dimension": settings.image_max_dimension,
         },
         "inference": {
             "max_actions": settings.max_actions,

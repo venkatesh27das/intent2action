@@ -150,6 +150,9 @@ def evaluate_case(
             response = pipeline.infer_from_text(case.input_text, case.context)
         latency_seconds = time.perf_counter() - started
         response_text = response.model_dump_json()
+        pipeline_timings = {}
+        if isinstance(response.raw_model_output, dict):
+            pipeline_timings = response.raw_model_output.get("pipeline_timings", {})
         actions_text = " ".join(
             " ".join(
                 [
@@ -198,6 +201,7 @@ def evaluate_case(
             "run": run_index,
             "ok": True,
             "latency_seconds": round(latency_seconds, 4),
+            "pipeline_timings": pipeline_timings,
             "actions_count": len(response.possible_actions),
             "intents_count": len(response.detected_intents),
             "entities_count": len(response.extracted_entities),
@@ -217,6 +221,7 @@ def evaluate_case(
             "run": run_index,
             "ok": False,
             "latency_seconds": round(time.perf_counter() - started, 4),
+            "pipeline_timings": {},
             "error": str(exc),
         }
 
