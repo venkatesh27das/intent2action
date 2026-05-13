@@ -1,77 +1,60 @@
 # intent2action
 
-intent2action is an open-source, local-first Python framework that converts text and image inputs into structured, ranked action candidates.
+intent2action converts text and images into structured, ranked action candidates.
 
-It is built for developers who want a clean action inference layer in front of downstream agents, automation systems, or human review workflows. It calls text or multimodal models through any OpenAI-compatible chat completions endpoint and returns validated JSON.
+It is local-first by default, works with any OpenAI-compatible `/v1/chat/completions` endpoint, and returns validated JSON that downstream systems or humans can review.
 
-This project does not execute actions. It only infers possible actions.
+intent2action never executes actions. It does not send emails, create tickets, update records, trigger deployments, approve payments, or call tools.
 
-## What It Does
+## Quick Start
 
-- Accepts text or image input.
-- Extracts entities and detects likely intents.
-- Generates ranked action candidates.
-- Identifies available and missing inputs.
-- Scores risk and recommends an execution mode.
-- Returns strict Pydantic v2 JSON for downstream systems.
-
-## What It Does Not Do
-
-- It does not send emails.
-- It does not create tickets.
-- It does not update records.
-- It does not trigger deployments, approvals, payments, or tools.
-- It does not execute any action proposed by the model.
-
-## Why It Exists
-
-Many automation systems jump too quickly from input to execution. intent2action creates a local-first reasoning boundary: it tells you what could be done, what information is missing, how risky each action is, and whether a human should review it.
-
-## Architecture
-
-```text
-Input
-  -> Input Classifier
-  -> Text/Image Parser
-  -> Entity Extractor
-  -> Intent Detector
-  -> Action Candidate Generator
-  -> Risk Scorer
-  -> Missing Input Detector
-  -> Action Ranker
-  -> JSON Response Validator
-```
-
-The LLM/VLM handles understanding and candidate generation. Deterministic Python handles schema validation, missing-input detection, risk overrides, ranking, deduplication, and JSON repair.
-
-## Installation
+Install the project:
 
 ```bash
 python3.11 -m venv venv
 source venv/bin/activate
 pip install -e ".[dev]"
-```
-
-Copy the example environment file if you want local overrides:
-
-```bash
 cp .env.example .env
 ```
 
-You can also use the CLI after installation:
+Start a local OpenAI-compatible model server, for example LM Studio on `http://localhost:1234/v1`, then set your model in `.env`:
 
 ```bash
-intent2action version
-intent2action config
-intent2action infer --text "Client is asking why the dashboard is blank."
+INTENT2ACTION_BASE_URL=http://localhost:1234/v1
+INTENT2ACTION_API_KEY=not-needed
+INTENT2ACTION_MODEL=local-model
+INTENT2ACTION_SUPPORTS_VISION=true
+```
+
+Run your first text inference:
+
+```bash
+intent2action infer --text "Client is asking why the sales dashboard is blank since yesterday."
+```
+
+Run your first image inference:
+
+```bash
 intent2action infer-image screenshot.png --context '{"domain":"data_analytics"}'
 ```
 
-## Model Provider Configuration
+Check the active non-secret configuration:
 
-intent2action is local-first by default and supports any OpenAI-compatible endpoint that exposes `/v1/chat/completions`, including LM Studio, Ollama's OpenAI-compatible endpoint, vLLM, llama.cpp servers, compatible TGI deployments, OpenAI, and self-hosted servers.
+```bash
+intent2action config
+```
 
-Generic configuration:
+## Choose Your Model Setup
+
+| Setup | Base URL | API key | Example model |
+| --- | --- | --- | --- |
+| LM Studio | `http://localhost:1234/v1` | `not-needed` | `gemma-4-local` |
+| Ollama OpenAI-compatible endpoint | `http://localhost:11434/v1` | `not-needed` | `llava:latest` |
+| vLLM | `http://localhost:8000/v1` | `not-needed` | `Qwen2.5-VL-7B-Instruct` |
+| OpenAI | `https://api.openai.com/v1` | your API key | `gpt-4o-mini` |
+| Self-hosted compatible server | your `/v1` URL | depends on server | your model ID |
+
+Full environment example:
 
 ```bash
 INTENT2ACTION_BASE_URL=http://localhost:1234/v1
@@ -88,64 +71,55 @@ Environment priority is:
 2. legacy `LMSTUDIO_*` variables
 3. `configs/default.yaml`
 
-LM Studio example:
-
-```bash
-INTENT2ACTION_BASE_URL=http://localhost:1234/v1
-INTENT2ACTION_API_KEY=not-needed
-INTENT2ACTION_MODEL=gemma-4-local
-```
-
-Ollama OpenAI-compatible endpoint example:
-
-```bash
-INTENT2ACTION_BASE_URL=http://localhost:11434/v1
-INTENT2ACTION_API_KEY=not-needed
-INTENT2ACTION_MODEL=llava:latest
-```
-
-vLLM example:
-
-```bash
-INTENT2ACTION_BASE_URL=http://localhost:8000/v1
-INTENT2ACTION_API_KEY=not-needed
-INTENT2ACTION_MODEL=Qwen2.5-VL-7B-Instruct
-```
-
-OpenAI example:
-
-```bash
-INTENT2ACTION_BASE_URL=https://api.openai.com/v1
-INTENT2ACTION_API_KEY=<your_api_key>
-INTENT2ACTION_MODEL=gpt-4o-mini
-```
-
-Legacy LM Studio variables are still supported:
+Legacy LM Studio variables still work:
 
 ```bash
 LMSTUDIO_BASE_URL=http://localhost:1234/v1
 LMSTUDIO_MODEL=local-model
 ```
 
-Vision support depends on the model and endpoint. Text-only models can still use `/infer-actions`. `/infer-actions/image` requires a multimodal model and an endpoint that supports the OpenAI-compatible image message format.
-
-For Docker on macOS or Windows, a host model server usually needs to be reachable from containers at an address such as `http://host.docker.internal:1234/v1`.
-
-Example provider YAML files are available in `configs/examples/` for LM Studio, Ollama, vLLM, OpenAI, and text-only local models.
+Example provider YAML files are available in `configs/examples/`.
 
 Remote endpoints can receive the text, images, and context you submit. Keep the default local endpoint for private data unless you have reviewed the remote provider's retention and access controls.
 
-## Run The API
+## Common Commands
+
+CLI:
+
+```bash
+intent2action version
+intent2action config
+intent2action infer --text "Break this customer email into possible follow-up actions."
+intent2action infer --file examples/text_inputs/customer_email.txt
+intent2action infer-image screenshot.png --context '{"user_role":"analyst"}'
+```
+
+FastAPI:
 
 ```bash
 uvicorn intent2action.app.main:app --reload
-```
-
-Health check:
-
-```bash
 curl http://localhost:8000/health
 ```
+
+Streamlit UI:
+
+```bash
+streamlit run intent2action/ui/streamlit_app.py
+```
+
+Docker:
+
+```bash
+docker compose up --build
+```
+
+API: `http://localhost:8000`
+
+UI: `http://localhost:8501`
+
+For Docker on macOS or Windows, a host model server usually needs a host-accessible base URL such as `http://host.docker.internal:1234/v1`.
+
+## API Examples
 
 Text inference:
 
@@ -170,11 +144,13 @@ curl -X POST http://localhost:8000/infer-actions/image \
   -F 'context={"domain":"data_analytics","user_role":"business_analyst"}'
 ```
 
-## Run The Streamlit UI
+Model health:
 
 ```bash
-streamlit run intent2action/ui/streamlit_app.py
+curl http://localhost:8000/health/model
 ```
+
+`/health/model` is best-effort. Some OpenAI-compatible servers do not implement `/models`, so a missing models endpoint does not necessarily mean chat completions will fail.
 
 ## Example Response
 
@@ -182,6 +158,8 @@ streamlit run intent2action/ui/streamlit_app.py
 {
   "input_summary": "A client reports that the sales dashboard has been blank since yesterday.",
   "input_type": "text",
+  "schema_version": "1.0",
+  "package_version": "1.0.0",
   "extracted_entities": [],
   "detected_intents": [],
   "possible_actions": [
@@ -206,6 +184,87 @@ streamlit run intent2action/ui/streamlit_app.py
 }
 ```
 
+## Response Fields
+
+| Field | Meaning |
+| --- | --- |
+| `input_summary` | Short model-generated summary of the submitted text or image. |
+| `input_type` | `text` or `image`. |
+| `schema_version` | Response schema version for downstream compatibility. |
+| `package_version` | intent2action package version that produced the response. |
+| `extracted_entities` | Structured entities found in the input. |
+| `detected_intents` | Likely intents with confidence and rationale. |
+| `possible_actions` | Ranked actions that could be taken. These are not executed. |
+| `required_inputs` | Inputs needed before an action can be safely considered. |
+| `available_inputs` | Inputs already present in the original content or context. |
+| `missing_inputs` | Required inputs not found in the original content or context. |
+| `risk_level` | Deterministic low, medium, or high risk classification. |
+| `execution_mode` | Recommended handling mode such as `draft_only` or `human_approval_required`. |
+| `clarifying_questions` | Questions to ask before proceeding. |
+| `warnings` | Safety or validation notes from post-processing. |
+
+## Vision Support
+
+Text-only models can use:
+
+- CLI: `intent2action infer`
+- API: `POST /infer-actions`
+
+Image inference requires:
+
+- A multimodal model.
+- An endpoint that accepts OpenAI-compatible image message payloads.
+- `INTENT2ACTION_SUPPORTS_VISION=true`.
+
+If vision is disabled, the Streamlit UI and provider client return:
+
+```text
+The configured model provider does not have vision support enabled.
+```
+
+## Troubleshooting
+
+| Problem | What to check |
+| --- | --- |
+| Endpoint not reachable | Confirm `INTENT2ACTION_BASE_URL` points to the server's `/v1` base URL and the server is running. |
+| Model not found | Set `INTENT2ACTION_MODEL` to the exact model ID exposed by your endpoint. |
+| API key rejected | Check `INTENT2ACTION_API_KEY`; use `not-needed` only for local endpoints that do not require auth. |
+| Image inference fails | Confirm the model is multimodal and supports OpenAI-compatible `image_url` message content. |
+| Invalid JSON from model | Try a stronger instruction-following model or enable JSON repair in config. |
+| Docker cannot reach local model | Use a host-accessible URL such as `http://host.docker.internal:1234/v1` on macOS or Windows. |
+| Remote provider sees private data | Use a local endpoint for sensitive content or review the remote provider's data policy. |
+
+## Public API Contract
+
+The v1-stable surface is:
+
+- `POST /infer-actions` for text inference.
+- `POST /infer-actions/image` for image inference.
+- `GET /health` for service and non-secret provider metadata.
+- `GET /health/model` for best-effort provider reachability.
+- `ActionInferenceRequest`, `ActionInferenceResponse`, `ActionCandidate`, `DetectedIntent`, and `ExtractedEntity` schemas.
+- `OpenAICompatibleClient`, `OpenAICompatibleClientError`, and `get_model_client`.
+- `INTENT2ACTION_*` configuration variables. Legacy `LMSTUDIO_BASE_URL` and `LMSTUDIO_MODEL` remain supported for compatibility.
+
+New optional response fields may be added in a future minor release, but existing v1 fields and meanings should remain compatible.
+
+## Architecture
+
+```text
+Input
+  -> Input Classifier
+  -> Text/Image Parser
+  -> Entity Extractor
+  -> Intent Detector
+  -> Action Candidate Generator
+  -> Risk Scorer
+  -> Missing Input Detector
+  -> Action Ranker
+  -> JSON Response Validator
+```
+
+The model handles understanding and candidate generation. Deterministic Python handles schema validation, missing-input detection, risk overrides, ranking, deduplication, JSON repair, and execution-safety checks.
+
 ## Project Structure
 
 ```text
@@ -223,32 +282,6 @@ examples/       Sample inputs and expected output shape
 tests/          Unit tests with mocked model responses
 ```
 
-## Docker
-
-```bash
-docker compose up --build
-```
-
-API: `http://localhost:8000`
-
-UI: `http://localhost:8501`
-
-A model server is assumed to run separately on the host machine unless you configure a remote endpoint. Set `INTENT2ACTION_BASE_URL` to a host-accessible address if needed.
-
-## Public API Contract
-
-The v1-stable surface is:
-
-- `POST /infer-actions` for text inference.
-- `POST /infer-actions/image` for image inference.
-- `GET /health` for service and non-secret provider metadata.
-- `GET /health/model` for best-effort provider reachability.
-- `ActionInferenceRequest`, `ActionInferenceResponse`, `ActionCandidate`, `DetectedIntent`, and `ExtractedEntity` schemas.
-- `OpenAICompatibleClient`, `OpenAICompatibleClientError`, and `get_model_client`.
-- `INTENT2ACTION_*` configuration variables. Legacy `LMSTUDIO_BASE_URL` and `LMSTUDIO_MODEL` remain supported for compatibility.
-
-Response objects include `schema_version` and `package_version` metadata. New optional response fields may be added in a future minor release, but existing v1 fields and meanings should remain compatible.
-
 ## Tests And Linting
 
 ```bash
@@ -256,7 +289,7 @@ pytest
 ruff check .
 ```
 
-Tests do not require a real model server. The provider and pipeline tests use mocked responses.
+Tests do not require a real model server. Provider and pipeline tests use mocked responses.
 
 CI runs linting and tests on Python 3.11 and 3.12. Tagged releases build distribution artifacts through the release workflow.
 
@@ -292,16 +325,7 @@ Latest local benchmark snapshot against LM Studio on 2026-05-13 using `google/ge
 | Min / max latency | 19.83s / 31.49s |
 | Mean benchmark score | 0.8969 |
 
-Per-case text scores from that run:
-
-| Case | Score | Latency |
-| --- | ---: | ---: |
-| dashboard_issue | 1.0000 | 19.83s |
-| meeting_notes | 1.0000 | 19.90s |
-| requirement_breakdown | 0.7500 | 31.49s |
-| customer_email | 0.8375 | 20.60s |
-
-Accuracy note: the benchmark score is a heuristic regression signal. It checks schema validity, expected intent/action keyword coverage, ranking order, missing-input behavior, and execution-safety wording. A stronger accuracy claim requires a larger human-labeled evaluation set.
+Accuracy note: the benchmark score is a heuristic regression signal. A stronger accuracy claim requires a larger human-labeled evaluation set.
 
 ## Release Readiness
 
