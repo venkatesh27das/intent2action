@@ -1,0 +1,9 @@
+model_provider:
+  type: "openai_compatible"
+  base_url: "http://localhost:11434/v1"
+  api_key: "not-needed"
+  model: "llava:latest"
+  timeout_seconds: 120
+  max_retries: 2
+  supports_vision: true
+

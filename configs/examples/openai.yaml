@@ -1,0 +1,9 @@
+model_provider:
+  type: "openai_compatible"
+  base_url: "https://api.openai.com/v1"
+  api_key: "${INTENT2ACTION_API_KEY}"
+  model: "gpt-4o-mini"
+  timeout_seconds: 120
+  max_retries: 2
+  supports_vision: true
+

@@ -1,0 +1,9 @@
+model_provider:
+  type: "openai_compatible"
+  base_url: "http://localhost:1234/v1"
+  api_key: "not-needed"
+  model: "local-text-model"
+  timeout_seconds: 120
+  max_retries: 2
+  supports_vision: false
+

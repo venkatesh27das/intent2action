@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
+from intent2action import __version__
 from intent2action.app.config import get_settings
 from intent2action.core.pipeline import ActionInferencePipeline
 from intent2action.providers.factory import get_model_client
@@ -19,7 +20,7 @@ configure_logging(settings.log_level)
 app = FastAPI(
     title="intent2action",
     description="Local-first multimodal action inference API.",
-    version="0.1.0",
+    version=__version__,
 )
 
 
@@ -36,6 +37,7 @@ def health() -> dict[str, Any]:
     return {
         "status": "ok",
         "service": "intent2action",
+        "version": __version__,
         "model_provider": {
             "type": settings.model_provider_type,
             "base_url": settings.model_base_url,
@@ -59,7 +61,7 @@ def infer_actions(request: ActionInferenceRequest) -> ActionInferenceResponse:
     try:
         return get_pipeline().infer_from_text(request.content, request.context)
     except OpenAICompatibleClientError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise _provider_http_exception(exc) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Action inference failed: {exc}") from exc
 
@@ -89,7 +91,22 @@ async def infer_actions_image(
             context=parsed_context,
         )
     except OpenAICompatibleClientError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise _provider_http_exception(exc) from exc
     except Exception as exc:
         detail = f"Image action inference failed: {exc}"
         raise HTTPException(status_code=500, detail=detail) from exc
+
+
+def _provider_http_exception(exc: OpenAICompatibleClientError) -> HTTPException:
+    status_code = 503
+    if exc.status_code in {401, 403}:
+        status_code = 401
+    elif exc.status_code in {400, 404, 415, 422}:
+        status_code = 400
+    return HTTPException(
+        status_code=status_code,
+        detail={
+            "error": exc.code,
+            "message": str(exc),
+        },
+    )

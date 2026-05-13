@@ -58,6 +58,15 @@ Copy the example environment file if you want local overrides:
 cp .env.example .env
 ```
 
+You can also use the CLI after installation:
+
+```bash
+intent2action version
+intent2action config
+intent2action infer --text "Client is asking why the dashboard is blank."
+intent2action infer-image screenshot.png --context '{"domain":"data_analytics"}'
+```
+
 ## Model Provider Configuration
 
 intent2action is local-first by default and supports any OpenAI-compatible endpoint that exposes `/v1/chat/completions`, including LM Studio, Ollama's OpenAI-compatible endpoint, vLLM, llama.cpp servers, compatible TGI deployments, OpenAI, and self-hosted servers.
@@ -121,6 +130,10 @@ LMSTUDIO_MODEL=local-model
 Vision support depends on the model and endpoint. Text-only models can still use `/infer-actions`. `/infer-actions/image` requires a multimodal model and an endpoint that supports the OpenAI-compatible image message format.
 
 For Docker on macOS or Windows, a host model server usually needs to be reachable from containers at an address such as `http://host.docker.internal:1234/v1`.
+
+Example provider YAML files are available in `configs/examples/` for LM Studio, Ollama, vLLM, OpenAI, and text-only local models.
+
+Remote endpoints can receive the text, images, and context you submit. Keep the default local endpoint for private data unless you have reviewed the remote provider's retention and access controls.
 
 ## Run The API
 
@@ -198,6 +211,7 @@ streamlit run intent2action/ui/streamlit_app.py
 ```text
 intent2action/
   app/          FastAPI app and config
+  cli.py        Command line interface
   core/         Pipeline steps and deterministic scoring
   providers/    OpenAI-compatible model clients
   schemas/      Pydantic v2 request and response models
@@ -221,6 +235,20 @@ UI: `http://localhost:8501`
 
 A model server is assumed to run separately on the host machine unless you configure a remote endpoint. Set `INTENT2ACTION_BASE_URL` to a host-accessible address if needed.
 
+## Public API Contract
+
+The v1-stable surface is:
+
+- `POST /infer-actions` for text inference.
+- `POST /infer-actions/image` for image inference.
+- `GET /health` for service and non-secret provider metadata.
+- `GET /health/model` for best-effort provider reachability.
+- `ActionInferenceRequest`, `ActionInferenceResponse`, `ActionCandidate`, `DetectedIntent`, and `ExtractedEntity` schemas.
+- `OpenAICompatibleClient`, `OpenAICompatibleClientError`, and `get_model_client`.
+- `INTENT2ACTION_*` configuration variables. Legacy `LMSTUDIO_BASE_URL` and `LMSTUDIO_MODEL` remain supported for compatibility.
+
+Response objects include `schema_version` and `package_version` metadata. New optional response fields may be added in a future minor release, but existing v1 fields and meanings should remain compatible.
+
 ## Tests And Linting
 
 ```bash
@@ -229,6 +257,8 @@ ruff check .
 ```
 
 Tests do not require a real model server. The provider and pipeline tests use mocked responses.
+
+CI runs linting and tests on Python 3.11 and 3.12. Tagged releases build distribution artifacts through the release workflow.
 
 ## Benchmarking
 
@@ -275,14 +305,16 @@ Accuracy note: the benchmark score is a heuristic regression signal. It checks s
 
 ## Release Readiness
 
-`0.1.0` includes:
+`1.0.0` includes:
 
 - Local-first OpenAI-compatible provider.
 - Text and image FastAPI inference endpoints.
+- CLI for text, image, config, and version commands.
 - Streamlit UI.
 - Strict schemas and deterministic post-processing.
-- Unit tests that do not require LM Studio.
+- Unit tests that do not require a real model server.
 - CI for Python 3.11 and 3.12.
+- Release artifact build workflow.
 - Docker and docker-compose support.
 - Benchmark harness for live local model evaluation.
 
@@ -291,8 +323,7 @@ Accuracy note: the benchmark score is a heuristic regression signal. It checks s
 - Add richer action ontology metadata.
 - Add optional local embedding-based deduplication.
 - Add provider adapters for non-OpenAI-compatible runtimes.
-- Add structured evaluation fixtures.
-- Add CLI support.
+- Add larger human-labeled structured evaluation fixtures.
 
 ## Contributing
 

@@ -1,0 +1,9 @@
+model_provider:
+  type: "openai_compatible"
+  base_url: "http://localhost:8000/v1"
+  api_key: "not-needed"
+  model: "Qwen2.5-VL-7B-Instruct"
+  timeout_seconds: 120
+  max_retries: 2
+  supports_vision: true
+

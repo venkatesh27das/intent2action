@@ -13,6 +13,33 @@ LOGGER = logging.getLogger(__name__)
 class OpenAICompatibleClientError(RuntimeError):
     """Raised when an OpenAI-compatible endpoint cannot return a usable response."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str = "model_provider_error",
+        status_code: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.status_code = status_code
+
+
+class ModelProviderUnavailableError(OpenAICompatibleClientError):
+    """Raised when the model provider cannot be reached."""
+
+
+class ModelProviderAuthenticationError(OpenAICompatibleClientError):
+    """Raised when the model provider rejects credentials."""
+
+
+class ModelNotFoundError(OpenAICompatibleClientError):
+    """Raised when the configured model is missing or unavailable."""
+
+
+class InvalidModelResponseError(OpenAICompatibleClientError):
+    """Raised when the provider returns malformed or incompatible data."""
+
 
 class VisionNotSupportedError(OpenAICompatibleClientError):
     """Raised when multimodal inference is requested for a text-only provider."""
@@ -64,7 +91,8 @@ class OpenAICompatibleClient:
 
         if not self.supports_vision:
             raise VisionNotSupportedError(
-                "The configured model provider does not have vision support enabled."
+                "The configured model provider does not have vision support enabled.",
+                code="vision_not_supported",
             )
 
         payload = {
@@ -113,6 +141,7 @@ class OpenAICompatibleClient:
     def _chat_completion(self, payload: dict[str, Any]) -> str:
         url = f"{self.base_url}/chat/completions"
         last_error: Exception | None = None
+        failure: OpenAICompatibleClientError | None = None
 
         for attempt in range(self.max_retries + 1):
             try:
@@ -127,6 +156,10 @@ class OpenAICompatibleClient:
                 return self._extract_content(data)
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
                 last_error = exc
+                failure = ModelProviderUnavailableError(
+                    f"Unable to reach the model provider at {self.base_url}.",
+                    code="model_provider_unavailable",
+                )
                 LOGGER.warning("Model provider connection failed on attempt %s", attempt + 1)
             except httpx.HTTPStatusError as exc:
                 last_error = exc
@@ -136,16 +169,23 @@ class OpenAICompatibleClient:
                     exc,
                     exc.response.text,
                 )
+                failure = self._http_error(exc)
                 if exc.response.status_code in {400, 404, 422}:
                     break
             except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
                 last_error = exc
+                failure = InvalidModelResponseError(
+                    "The model provider returned a response that intent2action could not parse. "
+                    "Expected choices[0].message.content to contain plain text JSON.",
+                    code="invalid_model_response",
+                )
                 LOGGER.warning("Model provider request failed on attempt %s: %s", attempt + 1, exc)
 
+        if failure is not None:
+            raise failure from last_error
         raise OpenAICompatibleClientError(
-            "Unable to reach the OpenAI-compatible model provider or parse its response. "
-            f"Check that the endpoint is running at {self.base_url}, the model "
-            f"'{self.model}' exists, and the endpoint supports /chat/completions."
+            "Unable to reach the OpenAI-compatible model provider or parse its response.",
+            code="model_provider_error",
         ) from last_error
 
     def _headers(self) -> dict[str, str]:
@@ -154,9 +194,61 @@ class OpenAICompatibleClient:
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
 
+    def _http_error(self, exc: httpx.HTTPStatusError) -> OpenAICompatibleClientError:
+        status_code = exc.response.status_code
+        detail = _response_error_detail(exc.response)
+        if status_code in {401, 403}:
+            return ModelProviderAuthenticationError(
+                "The model provider rejected the configured API key or credentials.",
+                code="model_provider_authentication_failed",
+                status_code=status_code,
+            )
+        if status_code == 404:
+            return ModelNotFoundError(
+                f"The configured model '{self.model}' or chat completions endpoint was not found.",
+                code="model_not_found",
+                status_code=status_code,
+            )
+        if status_code == 400 and "model" in detail.lower():
+            return ModelNotFoundError(
+                f"The configured model '{self.model}' was rejected by the model provider.",
+                code="model_not_found",
+                status_code=status_code,
+            )
+        if status_code in {400, 415, 422} and any(
+            phrase in detail.lower() for phrase in ("image", "vision", "multimodal")
+        ):
+            return VisionNotSupportedError(
+                "The model provider rejected the image payload. Check that the model and endpoint "
+                "support OpenAI-compatible vision messages.",
+                code="vision_not_supported",
+                status_code=status_code,
+            )
+        return OpenAICompatibleClientError(
+            f"The model provider returned HTTP {status_code}: {detail}",
+            code="model_provider_http_error",
+            status_code=status_code,
+        )
+
     @staticmethod
     def _extract_content(data: dict[str, Any]) -> str:
         content = data["choices"][0]["message"]["content"]
         if not isinstance(content, str):
             raise ValueError("Model response content is not plain text")
         return content
+
+
+def _response_error_detail(response: httpx.Response) -> str:
+    try:
+        data = response.json()
+    except ValueError:
+        return response.text[:500]
+    if isinstance(data, dict):
+        error = data.get("error")
+        if isinstance(error, dict):
+            message = error.get("message")
+            if isinstance(message, str):
+                return message
+        if isinstance(error, str):
+            return error
+    return str(data)[:500]

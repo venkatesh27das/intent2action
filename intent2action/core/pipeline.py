@@ -19,6 +19,19 @@ from intent2action.providers.openai_compatible_client import OpenAICompatibleCli
 from intent2action.schemas.response import ActionInferenceResponse
 
 PROMPT_DIR = Path(__file__).resolve().parents[1] / "prompts"
+EXECUTION_CLAIM_PHRASES = (
+    "has been sent",
+    "was sent",
+    "sent the",
+    "ticket created",
+    "created the ticket",
+    "email sent",
+    "updated the record",
+    "deleted",
+    "approved payment",
+    "triggered deployment",
+    "executed",
+)
 
 
 def load_prompt(name: str) -> str:
@@ -118,7 +131,7 @@ class ActionInferencePipeline:
 
         ranked = self.action_ranker.rank(processed)[: self.settings.max_actions]
         warnings = list(response.warnings)
-        if any("executed" in action.description.lower() for action in ranked):
+        if any(_contains_execution_claim(action) for action in ranked):
             warnings.append(
                 "Model output was checked for execution claims; actions are inference only."
             )
@@ -152,3 +165,14 @@ class ActionInferencePipeline:
             f"Context:\n{parsed['context']}\n\n"
             "Inspect the image and infer structured action candidates."
         )
+
+
+def _contains_execution_claim(action: Any) -> bool:
+    text = " ".join(
+        [
+            getattr(action, "action_name", ""),
+            getattr(action, "description", ""),
+            getattr(action, "rationale", ""),
+        ]
+    ).lower()
+    return any(phrase in text for phrase in EXECUTION_CLAIM_PHRASES)
